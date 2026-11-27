@@ -1,0 +1,48 @@
+{
+  "log": "logs/pyauto.log",
+  "history": "logs/history.jsonl",
+  "stop_on_error": false,
+  "tasks": [
+    {
+      "name": "打招呼",
+      "type": "shell",
+      "cmd": "echo pyauto 起来了",
+      "timeout": 10
+    },
+    {
+      "name": "跑外部脚本",
+      "type": "python",
+      "script": "hello.py",
+      "args": ["from-tasks-json"],
+      "timeout": 30
+    },
+    {
+      "name": "跑内联代码",
+      "type": "python",
+      "code": "print('内联 OK', 1 + 1)",
+      "timeout": 30
+    },
+    {
+      "name": "识别截图",
+      "type": "ocr",
+      "image": "../../shots/Screenshot_2026-11-14T010918.png",
+      "lang": "auto",
+      "out": "logs/ocr.txt",
+      "expect": "同意",
+      "timeout": 120
+    },
+    {
+      "name": "找到按钮就点击",
+      "type": "ocr",
+      "image": "../../shots/Screenshot_2026-11-14T010918.png",
+      "expect": "同意",
+      "click": true,
+      "enabled": false
+    },
+    {
+      "name": "歇一下",
+      "type": "sleep",
+      "seconds": 0.2
+    }
+  ]
+}

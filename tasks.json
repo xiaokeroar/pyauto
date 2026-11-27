@@ -1,0 +1,24 @@
+{
+  "log": "logs/web.log",
+  "history": "logs/history.jsonl",
+  "stop_on_error": true,
+  "timeout": 60,
+  "tasks": [
+    {
+      "name": "打个招呼",
+      "type": "shell",
+      "cmd": "echo hello from pyauto"
+    },
+    {
+      "name": "等一下下",
+      "type": "sleep",
+      "seconds": 0.8
+    },
+    {
+      "name": "再说一句",
+      "type": "shell",
+      "cmd": "echo 三步都跑完了"
+    }
+  ],
+  "recover": []
+}

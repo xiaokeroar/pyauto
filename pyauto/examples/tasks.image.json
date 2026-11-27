@@ -1,0 +1,54 @@
+{
+  "_说明": "找图 + 异常处理（因果规则）的示例。跑之前先把 templates/ 里的模板换成你自己的截图：pyauto image grab --box 0,0,200,80 -o templates/start.png",
+  "log": "logs/image.log",
+  "history": "logs/history.jsonl",
+  "stop_on_error": true,
+
+  "recover": [
+    {
+      "name": "公告弹窗",
+      "when": { "image": "../templates/notice.png", "threshold": 0.86 },
+      "then": [
+        { "type": "input", "action": "click", "x": 960, "y": 640 },
+        { "type": "sleep", "seconds": 0.6 }
+      ],
+      "then_action": "retry"
+    }
+  ],
+
+  "tasks": [
+    {
+      "name": "等开始按钮出现",
+      "type": "image",
+      "template": "../templates/start.png",
+      "action": "check",
+      "threshold": 0.88,
+      "wait": 8,
+      "allow_missing": false
+    },
+    {
+      "name": "点开始",
+      "type": "image",
+      "template": "../templates/start.png",
+      "action": "click",
+      "threshold": 0.88,
+      "wait": 5,
+      "sleep_before": 0.3,
+      "recover": [
+        {
+          "name": "先关掉「更新」提示",
+          "when": { "ocr": "稍后再说", "exact": true },
+          "then": [
+            { "type": "ocr", "screen": true, "expect": "稍后再说", "click": true }
+          ],
+          "then_action": "retry"
+        }
+      ]
+    },
+    {
+      "name": "截一张结果图",
+      "type": "shell",
+      "cmd": "echo 这一步换成你自己的动作"
+    }
+  ]
+}

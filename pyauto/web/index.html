@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>pyauto · 自动化脚本工作台</title>
+<meta name="description" content="pyauto 的浏览器版编辑器：排好步骤、实时生成 JSON 与 Python、直接运行看日志。" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='9' fill='%232563eb'/%3E%3Cpath d='M11 13l-3 3 3 3M21 13l3 3-3 3' stroke='white' stroke-width='2.2' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="css/tokens.css" />
+<link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+<a class="skip-link" href="#workspace">跳到工作区</a>
+
+<div class="app">
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 6 3 12l5 6M16 6l5 6-5 6" />
+        </svg>
+      </span>
+      <span class="brand-text">
+        <span class="brand-name">pyauto</span>
+        <span class="brand-sub">自动化脚本工作台</span>
+      </span>
+    </div>
+
+    <div class="topbar-center">
+      <div class="filepick">
+        <button class="file-chip" id="fileChip" type="button" title="当前任务文件，点击切换或新建" aria-haspopup="menu" aria-expanded="false">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M14 3v5h5" /><path d="M20 21H4V3h10l6 6v12Z" />
+          </svg>
+          <span id="fileChipText">tasks.json</span>
+          <span class="file-chip__dirty" id="dirtyDot" hidden>未保存</span>
+          <svg class="file-chip__caret" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </button>
+
+        <div class="filemenu" id="fileMenu" role="menu" aria-label="任务文件" hidden>
+          <p class="filemenu__title">任务文件</p>
+          <div class="filemenu__list" id="fileList"></div>
+          <form class="filemenu__new" id="fileNewForm">
+            <input
+              class="input"
+              id="fileNewName"
+              placeholder="新文件名，如 抢购"
+              aria-label="新任务文件名"
+              autocomplete="off"
+            />
+            <button class="btn btn-primary btn-small" type="submit">新建</button>
+          </form>
+        </div>
+      </div>
+      <p class="status" id="statusLine" role="status" aria-live="polite">
+        <span class="status__dot" id="statusDot" data-state="idle"></span>
+        <span id="statusText">就绪</span>
+      </p>
+    </div>
+
+    <div class="topbar-actions">
+      <button class="btn btn-ghost" type="button" id="btnSettings" title="设置（界面、快捷键、运行默认）">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 7h9M17 7h3M4 17h3M11 17h9" />
+          <circle cx="14.5" cy="7" r="2.1" />
+          <circle cx="8.5" cy="17" r="2.1" />
+        </svg>
+        设置
+      </button>
+      <button class="btn btn-ghost" type="button" id="btnRules">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v3M12 18v3M3 12h3M18 12h3M5.6 5.6l2.1 2.1M16.3 16.3l2.1 2.1M18.4 5.6l-2.1 2.1M7.7 16.3l-2.1 2.1" />
+          <circle cx="12" cy="12" r="3.2" />
+        </svg>
+        异常处理
+        <span class="badge" id="rulesBadge" hidden>0</span>
+      </button>
+      <button class="btn btn-ghost" type="button" id="btnStop" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="7" y="7" width="10" height="10" rx="2" />
+        </svg>
+        停止
+      </button>
+      <button class="btn btn-primary" type="button" id="btnRun">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 4.5v15l12-7.5-12-7.5Z" />
+        </svg>
+        运行
+      </button>
+    </div>
+  </header>
+
+  <div class="banner" id="errorBanner" role="alert" hidden>
+    <span class="banner__text" id="errorText">连不上本地服务。</span>
+    <button class="btn btn-small" type="button" id="btnRetry">重试</button>
+  </div>
+
+  <main class="workspace" id="workspace">
+    <!-- 左：动作库 + 步骤 -->
+    <section class="panel panel--library" data-pane="library" aria-labelledby="libraryTitle">
+      <header class="panel__head">
+        <h2 class="panel__title" id="libraryTitle">动作库</h2>
+        <p class="panel__hint">点一下加到末尾</p>
+      </header>
+      <div class="palette" id="palette" role="group" aria-label="动作库"></div>
+
+      <section class="palette-combos" id="paletteCombos" aria-labelledby="combosTitle">
+        <header class="palette-combos__head">
+          <h3 class="palette-combos__title" id="combosTitle">我的组合</h3>
+          <button class="link-btn" type="button" id="btnMakeComboTop" title="把选中的步骤存成组合">新建组合</button>
+        </header>
+        <div class="palette--combos" id="comboChips" role="group" aria-label="我的组合"></div>
+        <p class="palette-combos__empty" id="comboEmpty" hidden>
+          还没有组合：按住 Shift 点两个步骤选中一段，再点「新建组合」。
+        </p>
+      </section>
+
+      <header class="panel__head panel__head--split">
+        <h2 class="panel__title">步骤 <span class="count" id="stepsCount">0</span></h2>
+        <div class="head-actions">
+          <button class="link-btn" type="button" id="btnMakeCombo" hidden>存成组合</button>
+          <button class="link-btn" type="button" id="btnClear">清空</button>
+        </div>
+      </header>
+      <div class="steps" id="steps" role="listbox" aria-labelledby="libraryTitle" tabindex="0" aria-describedby="stepsHint"></div>
+      <p class="visually-hidden" id="stepsHint">用上下方向键切换步骤，按删除键移除当前步骤；按住 Shift 再点一个步骤可以选中一段。</p>
+    </section>
+
+    <!-- 中：参数编辑 -->
+    <section class="panel panel--editor" data-pane="editor" aria-labelledby="editorTitle">
+      <header class="panel__head">
+        <h2 class="panel__title" id="editorTitle">参数</h2>
+        <p class="panel__hint" id="editorSubtitle">选中左边的一个步骤</p>
+      </header>
+      <div class="editor" id="editor"></div>
+    </section>
+
+    <!-- 右：产物 -->
+    <section class="panel panel--preview" data-pane="preview" aria-labelledby="previewTitle">
+      <header class="panel__head panel__head--split">
+        <h2 class="panel__title" id="previewTitle">产物</h2>
+        <div class="segmented" role="tablist" aria-label="产物类型">
+          <button class="segmented__btn" type="button" role="tab" id="tabJson" aria-selected="true" aria-controls="previewBody" data-tab="json">任务 JSON</button>
+          <button class="segmented__btn" type="button" role="tab" id="tabPy" aria-selected="false" aria-controls="previewBody" data-tab="python" tabindex="-1">Python</button>
+        </div>
+      </header>
+      <div class="preview" id="previewBody" role="tabpanel" aria-labelledby="tabJson" tabindex="0"></div>
+      <footer class="panel__foot">
+        <button class="btn btn-ghost btn-small" type="button" id="btnCopy">复制</button>
+        <button class="btn btn-ghost btn-small" type="button" id="btnExport">导出 .py</button>
+        <button class="btn btn-primary btn-small" type="button" id="btnSave">保存 JSON</button>
+      </footer>
+    </section>
+
+    <!-- 底：日志 -->
+    <section class="panel panel--console" data-pane="console" aria-labelledby="consoleTitle">
+      <header class="panel__head panel__head--split">
+        <h2 class="panel__title" id="consoleTitle">运行日志</h2>
+        <div class="console__tools">
+          <label class="switch">
+            <input type="checkbox" id="autoScroll" checked />
+            <span>跟着滚</span>
+          </label>
+          <button class="link-btn" type="button" id="btnResetLayout" title="把左栏、右栏、日志高度恢复到默认比例">重置分栏</button>
+          <button class="link-btn" type="button" id="btnClearLog">清空</button>
+        </div>
+      </header>
+      <div class="console" id="console" role="log" aria-live="polite" aria-relevant="additions text"></div>
+    </section>
+
+    <div class="splitter splitter--v" data-split="left" role="separator" aria-orientation="vertical"
+      aria-label="拖动调整动作库宽度，双击复位" tabindex="0"></div>
+    <div class="splitter splitter--v" data-split="preview" role="separator" aria-orientation="vertical"
+      aria-label="拖动调整产物栏宽度，双击复位" tabindex="0"></div>
+    <div class="splitter splitter--h" data-split="console" role="separator" aria-orientation="horizontal"
+      aria-label="拖动调整日志高度，双击复位" tabindex="0"></div>
+  </main>
+
+  <nav class="tabbar" aria-label="分栏切换">
+    <button class="tabbar__btn" type="button" data-goto="library" aria-current="true">动作</button>
+    <button class="tabbar__btn" type="button" data-goto="editor">参数</button>
+    <button class="tabbar__btn" type="button" data-goto="preview">产物</button>
+    <button class="tabbar__btn" type="button" data-goto="console">日志</button>
+  </nav>
+</div>
+
+<dialog class="modal modal--picker" id="pickerDialog" aria-labelledby="pickerTitle">
+  <header class="modal__head">
+    <h2 class="modal__title" id="pickerTitle">在屏幕上取位置</h2>
+    <button class="icon-btn" type="button" data-close aria-label="关闭">✕</button>
+  </header>
+  <div class="modal__body">
+    <p class="modal__hint" id="pickerHint">点一下取坐标；拖一个框取区域。</p>
+    <div class="picker" id="pickerStage">
+      <img id="pickerImage" alt="当前屏幕截图" />
+      <div class="picker__box" id="pickerBox" hidden></div>
+    </div>
+    <dl class="picker__readout">
+      <div><dt>坐标</dt><dd id="pickerPoint">—</dd></div>
+      <div><dt>区域</dt><dd id="pickerRegion">—</dd></div>
+    </dl>
+  </div>
+  <footer class="modal__foot">
+    <button class="btn btn-ghost" type="button" data-close>取消</button>
+    <button class="btn btn-primary" type="button" id="pickerConfirm">用这个</button>
+  </footer>
+</dialog>
+
+<dialog class="modal modal--wide" id="rulesDialog" aria-labelledby="rulesTitle">
+  <header class="modal__head">
+    <h2 class="modal__title" id="rulesTitle">异常处理（全局）</h2>
+    <button class="icon-btn" type="button" data-close aria-label="关闭">✕</button>
+  </header>
+  <div class="modal__body rules-body">
+    <div class="rules-list" id="rulesList" role="listbox" aria-label="规则列表" tabindex="0"></div>
+    <div class="rules-form" id="rulesForm"></div>
+  </div>
+  <footer class="modal__foot">
+    <button class="btn btn-ghost" type="button" id="ruleAdd">新增规则</button>
+    <span class="modal__spacer"></span>
+    <button class="btn btn-ghost" type="button" data-close>取消</button>
+    <button class="btn btn-primary" type="button" id="rulesConfirm">保存规则</button>
+  </footer>
+</dialog>
+
+<dialog class="modal modal--picker" id="pointDialog" aria-labelledby="pointTitle">
+  <header class="modal__head">
+    <h2 class="modal__title" id="pointTitle">在模板图上选位置</h2>
+    <button class="icon-btn" type="button" data-close aria-label="关闭">✕</button>
+  </header>
+  <div class="modal__body">
+    <p class="modal__hint">在图上点一下要按的那一处；蓝色圆点就是落点，比例按模板图算。</p>
+    <div class="picker picker--point" id="pointStage">
+      <div class="point-pick__canvas" id="pointCanvas">
+        <img class="pointpad__img" id="pointImage" alt="模板图" draggable="false" />
+        <span class="point-pick__dot" id="pointDot" hidden></span>
+      </div>
+    </div>
+    <dl class="picker__readout">
+      <div><dt>横向</dt><dd id="pointRx">—</dd></div>
+      <div><dt>纵向</dt><dd id="pointRy">—</dd></div>
+      <div><dt>放大</dt><dd id="pointZoom">—</dd></div>
+    </dl>
+  </div>
+  <footer class="modal__foot">
+    <button class="btn btn-ghost" type="button" data-close>取消</button>
+    <button class="btn btn-primary" type="button" id="pointConfirm" disabled>用这个</button>
+  </footer>
+</dialog>
+
+<dialog class="modal modal--narrow" id="comboDialog" aria-labelledby="comboTitle">
+  <header class="modal__head">
+    <h2 class="modal__title" id="comboTitle">存成组合</h2>
+    <button class="icon-btn" type="button" data-close aria-label="关闭">✕</button>
+  </header>
+  <div class="modal__body">
+    <p class="modal__hint" id="comboHint">把选中的几步存成组合，以后一键插进来。</p>
+    <label class="field">
+      <span class="field__label">组合名</span>
+      <input class="input" id="comboName" maxlength="40" autocomplete="off" placeholder="比如：领日常奖励" />
+    </label>
+    <div class="combo-preview" id="comboPreview" aria-label="将要保存的步骤"></div>
+    <p class="field__hint">存在工程根目录的 <code>combos.json</code>，所有任务文件都能用。</p>
+  </div>
+  <footer class="modal__foot">
+    <button class="btn btn-ghost" type="button" data-close>取消</button>
+    <button class="btn btn-primary" type="button" id="comboConfirm">保存</button>
+  </footer>
+</dialog>
+
+<dialog class="modal modal--settings" id="settingsDialog" aria-labelledby="settingsTitle">
+  <header class="modal__head">
+    <h2 class="modal__title" id="settingsTitle">设置</h2>
+    <button class="icon-btn" type="button" data-close aria-label="关闭">✕</button>
+  </header>
+  <div class="modal__body">
+    <section class="set-block">
+      <h3 class="set-block__title">界面</h3>
+      <div class="set-row">
+        <span class="set-row__label">主题色</span>
+        <div class="swatches" id="setAccent"></div>
+      </div>
+      <div class="set-row">
+        <span class="set-row__label">字号</span>
+        <input class="range" type="range" id="setFont" min="12" max="15" step="0.5" />
+        <span class="set-row__hint">12 – 15 px</span>
+      </div>
+      <div class="set-row">
+        <span class="set-row__label">密度</span>
+        <select class="select" id="setDensity">
+          <option value="cozy">紧凑</option>
+          <option value="roomy">宽松</option>
+        </select>
+      </div>
+    </section>
+
+    <section class="set-block">
+      <h3 class="set-block__title">快捷键</h3>
+      <div class="set-row">
+        <span class="set-row__label">启动</span>
+        <input class="input" id="setHotStart" maxlength="12" placeholder="F9" />
+        <span class="set-row__label">停止</span>
+        <input class="input" id="setHotStop" maxlength="12" placeholder="F10" />
+      </div>
+      <p class="field__hint">窗口在前台时生效（F9 启动 / F10 停止）；填 F1–F12 或单个字母。</p>
+    </section>
+
+    <section class="set-block">
+      <h3 class="set-block__title">运行默认（写进当前任务文件）</h3>
+      <div class="set-grid">
+        <label class="field">
+          <span class="field__label">单步超时（秒）</span>
+          <input class="input" id="setTimeout" type="number" min="1" />
+        </label>
+        <label class="field">
+          <span class="field__label">失败重试</span>
+          <input class="input" id="setRetries" type="number" min="0" />
+        </label>
+        <label class="field">
+          <span class="field__label">重试间隔（秒）</span>
+          <input class="input" id="setRetryDelay" type="number" min="0" step="0.1" />
+        </label>
+      </div>
+      <label class="check">
+        <input type="checkbox" id="setStopOnError" />
+        <span>出错就停（关掉=出错也继续后面的步骤）</span>
+      </label>
+      <label class="check">
+        <input type="checkbox" id="setRecoverOnError" />
+        <span>出错时先跑全局异常处理，再重试这一步</span>
+      </label>
+    </section>
+
+    <section class="set-block">
+      <h3 class="set-block__title">文件</h3>
+      <p class="field__hint">工程目录：<code id="setMeta">—</code></p>
+      <p class="field__hint">任务文件写在工程根，模板在 <code>templates/</code>，组合在 <code>combos.json</code>。</p>
+    </section>
+  </div>
+  <footer class="modal__foot">
+    <button class="btn btn-primary" type="button" data-close>好</button>
+  </footer>
+</dialog>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>

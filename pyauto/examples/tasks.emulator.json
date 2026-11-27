@@ -1,0 +1,54 @@
+{
+  "_说明": "模拟器/真机任务示例：全部走 adb，不受窗口位置影响。enabled:false 的需要真点设备，自己改 true。",
+  "log": "logs/emulator.log",
+  "history": "logs/history.jsonl",
+  "stop_on_error": true,
+  "tasks": [
+    {
+      "name": "看前台应用",
+      "type": "adb",
+      "action": "current"
+    },
+    {
+      "name": "设备分辨率",
+      "type": "adb",
+      "action": "size"
+    },
+    {
+      "name": "截一张设备图",
+      "type": "adb",
+      "action": "shot",
+      "out": "logs/device.png"
+    },
+    {
+      "name": "识别屏幕文字",
+      "type": "ocr",
+      "device": true,
+      "wait": 5,
+      "out": "logs/device.txt"
+    },
+    {
+      "name": "按文字点按钮（示例，真点设备）",
+      "type": "ocr",
+      "device": true,
+      "wait": 5,
+      "expect": "回家",
+      "click": true,
+      "enabled": false
+    },
+    {
+      "name": "等模拟器启动完成",
+      "type": "adb",
+      "action": "boot",
+      "timeout": 180,
+      "enabled": false
+    },
+    {
+      "name": "拉起游戏",
+      "type": "adb",
+      "action": "start",
+      "package": "com.netease.party.huawei",
+      "enabled": false
+    }
+  ]
+}
