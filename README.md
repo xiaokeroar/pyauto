@@ -39,7 +39,7 @@ set PYAUTO_PYTHON=C:\Python312\python.exe
 | 找图 | 纯 numpy FFT 模板匹配，先原尺寸快找、再 0.9/1.1/0.8/1.25 倍缩放回退；可叠加「同时看到某段文字」 |
 | 点击/输入 | ctypes 调 user32，支持中文输入（SendInput Unicode） |
 | 定时 | `every 30s` / `daily 09:30` / `cron */5 * * * *`；重复块还支持 `at`（18:00 / 18:00Z）+ `every` + `times` |
-| adb | 截图、点击、滑动、输入、UI 树；MuMu 模拟器启动 + 置顶 |
+| adb | 截图、点击、滑动、输入、UI 树；|
 | 任务编排 | shell / python / ocr / image / repeat / group / input / adb / sleep，支持重试、超时、跳过、异常处理规则 |
 
 更多细节见 [pyauto/README.md](pyauto/README.md)（OCR 原理、任务字段表、调度表达式、找图/组合/异常处理、HTTP 接口表）。
@@ -58,7 +58,4 @@ combos.json        组合片段
 ```
 
 ## 说明
-
-- 本项目只面向**合法自动化**：办公批处理、自己的软件测试、截图识别归档等。
-- 请勿用于违反游戏/平台用户协议的自动化（模拟器 + 模拟点击这类通常被明确禁止，可能导致封号）。
-- 没有上传任何账号凭据、日志或截图缓存；`tasks.json` 只是示例。
+-由于我自己发现问题太少了，而且一次就只改一点，所以我放到GitHub上让你们提交一点issues（偷笑）
